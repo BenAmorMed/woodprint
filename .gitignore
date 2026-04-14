@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.test
+
+# Ignore internal documentation as requested
+backend/internal-docs/
+
+# Ignore PRs, issues, and releases generated files/docs as requested
+issues/
+prs/
+releases/
