@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // -----------------------------------------
@@ -21,14 +20,16 @@ model Utilisateur {
   id               String    @id @default(uuid()) @db.Uuid
   nom              String
   email            String    @unique
-  mot_de_passe     String?   // Null for guests promoted to user? Or just guest accounts
-  role             RoleUtilisateur @default(CLIENT)
-  date_creation    DateTime  @default(now())
-  date_mise_a_jour DateTime  @updatedAt
+  mot_de_passe           String?   // Null for guests
+  jeton_reinitialisation String?   // Reset password token
+  role                   RoleUtilisateur @default(CLIENT)
+  date_creation          DateTime  @default(now())
+  date_mise_a_jour       DateTime  @updatedAt
 
   commandes        Commande[]
   avis             Avis[]
   permissions      PermissionAdmin[]
+  journaux_audit   JournalisationAudit[]
 }
 
 model ModuleSysteme {
@@ -140,8 +141,16 @@ model LigneCommande {
 }
 
 // -----------------------------------------
-// MARKETING, AVIS & CONFIGURATION
+// MARKETING, AVIS, MAILING & CONFIGURATION
 // -----------------------------------------
+
+model ListeDiffusion {
+  id                      String      @id @default(uuid()) @db.Uuid
+  email                   String      @unique
+  actif                   Boolean     @default(true)
+  date_inscription        DateTime    @default(now())
+}
+
 
 model Avis {
   id                      String      @id @default(uuid()) @db.Uuid
@@ -175,3 +184,20 @@ model ParametresBoutique {
   seuil_livraison_gratuite Decimal    @default(0.0) @db.Decimal(10, 2)
   banniere_annonce        String?     // Text displayed at top of website
 }
+
+// -----------------------------------------
+// SUPER_ADMIN: AUDIT ET SECURITE
+// -----------------------------------------
+
+model JournalisationAudit {
+  id               String      @id @default(uuid()) @db.Uuid
+  utilisateur_id   String      @db.Uuid
+  entite_cible     String      // Nom de l'action ou table
+  action           String      // CREATE, UPDATE, DELETE, GRANT_PERMISSION
+  details          Json?       // Données avant/après
+  adresse_ip       String?     // Adresse IP traçable
+  date_action      DateTime    @default(now())
+
+  utilisateur      Utilisateur @relation(fields: [utilisateur_id], references: [id], onDelete: Cascade)
+}
+
