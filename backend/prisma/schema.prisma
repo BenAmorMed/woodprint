@@ -17,36 +17,36 @@ enum RoleUtilisateur {
 }
 
 model Utilisateur {
-  id               String    @id @default(uuid()) @db.Uuid
-  nom              String
-  email            String    @unique
-  mot_de_passe           String?   // Null for guests
-  jeton_reinitialisation String?   // Reset password token
+  id                     String          @id @default(uuid()) @db.Uuid
+  nom                    String
+  email                  String          @unique
+  mot_de_passe           String? // Null for guests
+  jeton_reinitialisation String? // Reset password token
   role                   RoleUtilisateur @default(CLIENT)
-  date_creation          DateTime  @default(now())
-  date_mise_a_jour       DateTime  @updatedAt
+  date_creation          DateTime        @default(now())
+  date_mise_a_jour       DateTime        @updatedAt
 
-  commandes        Commande[]
-  avis             Avis[]
-  permissions      PermissionAdmin[]
-  journaux_audit   JournalisationAudit[]
+  commandes      Commande[]
+  avis           Avis[]
+  permissions    PermissionAdmin[]
+  journaux_audit JournalisationAudit[]
 }
 
 model ModuleSysteme {
-  id               String    @id @default(uuid()) @db.Uuid
-  nom              String    @unique // ex: "GESTION_PRODUITS", "GESTION_COMMANDES"
-  description      String?
+  id          String  @id @default(uuid()) @db.Uuid
+  nom         String  @unique // ex: "GESTION_PRODUITS", "GESTION_COMMANDES"
+  description String?
 
-  permissions      PermissionAdmin[]
+  permissions PermissionAdmin[]
 }
 
 model PermissionAdmin {
-  id               String    @id @default(uuid()) @db.Uuid
-  utilisateur_id   String    @db.Uuid
-  module_id        String    @db.Uuid
+  id             String @id @default(uuid()) @db.Uuid
+  utilisateur_id String @db.Uuid
+  module_id      String @db.Uuid
 
-  utilisateur      Utilisateur   @relation(fields: [utilisateur_id], references: [id], onDelete: Cascade)
-  module           ModuleSysteme @relation(fields: [module_id], references: [id], onDelete: Cascade)
+  utilisateur Utilisateur   @relation(fields: [utilisateur_id], references: [id], onDelete: Cascade)
+  module      ModuleSysteme @relation(fields: [module_id], references: [id], onDelete: Cascade)
 
   @@unique([utilisateur_id, module_id])
 }
@@ -56,47 +56,47 @@ model PermissionAdmin {
 // -----------------------------------------
 
 model Categorie {
-  id                  String      @id @default(uuid()) @db.Uuid
-  nom                 String
-  categorie_parente_id String?    @db.Uuid
-  
-  categorie_parente   Categorie?  @relation("ArborescenceCategories", fields: [categorie_parente_id], references: [id])
-  sous_categories     Categorie[] @relation("ArborescenceCategories")
-  produits            Produit[]
+  id                   String  @id @default(uuid()) @db.Uuid
+  nom                  String
+  categorie_parente_id String? @db.Uuid
+
+  categorie_parente Categorie?  @relation("ArborescenceCategories", fields: [categorie_parente_id], references: [id])
+  sous_categories   Categorie[] @relation("ArborescenceCategories")
+  produits          Produit[]
 }
 
 model Produit {
-  id                      String      @id @default(uuid()) @db.Uuid
-  titre                   String
-  prix_de_base            Decimal     @db.Decimal(10, 2)
-  description             String?
-  categorie_id            String      @db.Uuid
-  
+  id           String  @id @default(uuid()) @db.Uuid
+  titre        String
+  prix_de_base Decimal @db.Decimal(10, 2)
+  description  String?
+  categorie_id String  @db.Uuid
+
   // Galerie d'images standard du produit (Aperçus pour la boutique)
-  images_produit          String[]    
+  images_produit String[]
 
   // JSONB Field dictating the Frontend UI builder
-  schema_personnalisation Json        @default("[]") 
-  
-  actif                   Boolean     @default(true)
-  date_creation           DateTime    @default(now())
+  schema_personnalisation Json @default("[]")
 
-  categorie               Categorie   @relation(fields: [categorie_id], references: [id])
-  variantes               VarianteProduit[]
-  avis                    Avis[]
-  offres_promotionnelles  Offre[]     @relation("PromotionProduit")
+  actif         Boolean  @default(true)
+  date_creation DateTime @default(now())
+
+  categorie              Categorie         @relation(fields: [categorie_id], references: [id])
+  variantes              VarianteProduit[]
+  avis                   Avis[]
+  offres_promotionnelles Offre[]           @relation("PromotionProduit")
 }
 
 model VarianteProduit {
-  id                      String      @id @default(uuid()) @db.Uuid
-  produit_id              String      @db.Uuid
-  sku                     String      @unique
-  attributs               Json        // JSONB ex: {"taille": "XL", "couleur": "Noir"}
-  modificateur_prix       Decimal     @default(0.0) @db.Decimal(10, 2)
-  stock                   Int         @default(0)
+  id                String  @id @default(uuid()) @db.Uuid
+  produit_id        String  @db.Uuid
+  sku               String  @unique
+  attributs         Json // JSONB ex: {"taille": "XL", "couleur": "Noir"}
+  modificateur_prix Decimal @default(0.0) @db.Decimal(10, 2)
+  stock             Int     @default(0)
 
-  produit                 Produit     @relation(fields: [produit_id], references: [id], onDelete: Cascade)
-  lignes_commande         LigneCommande[]
+  produit         Produit         @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+  lignes_commande LigneCommande[]
 }
 
 // -----------------------------------------
@@ -112,32 +112,32 @@ enum StatutCommande {
 }
 
 model Commande {
-  id                      String      @id @default(uuid()) @db.Uuid
-  utilisateur_id          String?     @db.Uuid // Nullish allows guest checkouts
-  code_confirmation       String?     @unique  // Given to guests to track order
-  email_client            String      // Used as fallback or guest mapping
-  nom_client              String
-  statut                  StatutCommande @default(EN_ATTENTE)
-  montant_total           Decimal     @db.Decimal(10, 2)
-  adresse_livraison       Json        // JSONB to map easily
-  date_creation           DateTime    @default(now())
-  date_mise_a_jour        DateTime    @updatedAt
+  id                String         @id @default(uuid()) @db.Uuid
+  utilisateur_id    String?        @db.Uuid // Nullish allows guest checkouts
+  code_confirmation String?        @unique // Given to guests to track order
+  email_client      String // Used as fallback or guest mapping
+  nom_client        String
+  statut            StatutCommande @default(EN_ATTENTE)
+  montant_total     Decimal        @db.Decimal(10, 2)
+  adresse_livraison Json // JSONB to map easily
+  date_creation     DateTime       @default(now())
+  date_mise_a_jour  DateTime       @updatedAt
 
-  utilisateur             Utilisateur? @relation(fields: [utilisateur_id], references: [id])
-  lignes                  LigneCommande[]
+  utilisateur Utilisateur?    @relation(fields: [utilisateur_id], references: [id])
+  lignes      LigneCommande[]
 }
 
 model LigneCommande {
-  id                              String      @id @default(uuid()) @db.Uuid
-  commande_id                     String      @db.Uuid
-  variante_produit_id             String      @db.Uuid
-  quantite                        Int
-  
-  // JSONB answers validating against `Produit.schema_personnalisation`
-  personnalisations_utilisateur   Json        
+  id                  String @id @default(uuid()) @db.Uuid
+  commande_id         String @db.Uuid
+  variante_produit_id String @db.Uuid
+  quantite            Int
 
-  commande                        Commande    @relation(fields: [commande_id], references: [id], onDelete: Cascade)
-  variante_produit                VarianteProduit @relation(fields: [variante_produit_id], references: [id])
+  // JSONB answers validating against `Produit.schema_personnalisation`
+  personnalisations_utilisateur Json
+
+  commande         Commande        @relation(fields: [commande_id], references: [id], onDelete: Cascade)
+  variante_produit VarianteProduit @relation(fields: [variante_produit_id], references: [id])
 }
 
 // -----------------------------------------
@@ -145,44 +145,43 @@ model LigneCommande {
 // -----------------------------------------
 
 model ListeDiffusion {
-  id                      String      @id @default(uuid()) @db.Uuid
-  email                   String      @unique
-  actif                   Boolean     @default(true)
-  date_inscription        DateTime    @default(now())
+  id               String   @id @default(uuid()) @db.Uuid
+  email            String   @unique
+  actif            Boolean  @default(true)
+  date_inscription DateTime @default(now())
 }
 
-
 model Avis {
-  id                      String      @id @default(uuid()) @db.Uuid
-  produit_id              String      @db.Uuid
-  utilisateur_id          String      @db.Uuid
-  note                    Int         // 1 to 5
-  commentaire             String?
-  urls_media              String[]    // Array of string URLs (local storage paths)
-  reponse_admin           String?
-  date_creation           DateTime    @default(now())
+  id             String   @id @default(uuid()) @db.Uuid
+  produit_id     String   @db.Uuid
+  utilisateur_id String   @db.Uuid
+  note           Int // 1 to 5
+  commentaire    String?
+  urls_media     String[] // Array of string URLs (local storage paths)
+  reponse_admin  String?
+  date_creation  DateTime @default(now())
 
-  produit                 Produit     @relation(fields: [produit_id], references: [id], onDelete: Cascade)
-  utilisateur             Utilisateur @relation(fields: [utilisateur_id], references: [id], onDelete: Cascade)
+  produit     Produit     @relation(fields: [produit_id], references: [id], onDelete: Cascade)
+  utilisateur Utilisateur @relation(fields: [utilisateur_id], references: [id], onDelete: Cascade)
 }
 
 model Offre {
-  id                      String      @id @default(uuid()) @db.Uuid
-  titre                   String
-  description             String?
-  image_banniere          String?
-  actif                   Boolean     @default(false)
-  date_debut             DateTime?
-  date_fin               DateTime?
+  id             String    @id @default(uuid()) @db.Uuid
+  titre          String
+  description    String?
+  image_banniere String?
+  actif          Boolean   @default(false)
+  date_debut     DateTime?
+  date_fin       DateTime?
 
-  produits_cibles         Produit[]   @relation("PromotionProduit")
+  produits_cibles Produit[] @relation("PromotionProduit")
 }
 
 model ParametresBoutique {
-  id                      Int         @id @default(1) // Singleton logic
-  frais_livraison         Decimal     @default(0.0) @db.Decimal(10, 2)
-  seuil_livraison_gratuite Decimal    @default(0.0) @db.Decimal(10, 2)
-  banniere_annonce        String?     // Text displayed at top of website
+  id                       Int     @id @default(1) // Singleton logic
+  frais_livraison          Decimal @default(0.0) @db.Decimal(10, 2)
+  seuil_livraison_gratuite Decimal @default(0.0) @db.Decimal(10, 2)
+  banniere_annonce         String? // Text displayed at top of website
 }
 
 // -----------------------------------------
@@ -190,14 +189,13 @@ model ParametresBoutique {
 // -----------------------------------------
 
 model JournalisationAudit {
-  id               String      @id @default(uuid()) @db.Uuid
-  utilisateur_id   String      @db.Uuid
-  entite_cible     String      // Nom de l'action ou table
-  action           String      // CREATE, UPDATE, DELETE, GRANT_PERMISSION
-  details          Json?       // Données avant/après
-  adresse_ip       String?     // Adresse IP traçable
-  date_action      DateTime    @default(now())
+  id             String   @id @default(uuid()) @db.Uuid
+  utilisateur_id String   @db.Uuid
+  entite_cible   String // Nom de l'action ou table
+  action         String // CREATE, UPDATE, DELETE, GRANT_PERMISSION
+  details        Json? // Données avant/après
+  adresse_ip     String? // Adresse IP traçable
+  date_action    DateTime @default(now())
 
-  utilisateur      Utilisateur @relation(fields: [utilisateur_id], references: [id], onDelete: Cascade)
+  utilisateur Utilisateur @relation(fields: [utilisateur_id], references: [id], onDelete: Cascade)
 }
-
