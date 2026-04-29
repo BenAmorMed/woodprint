@@ -3,28 +3,29 @@ import { prisma } from '../config/db';
 /**
  * Inscrire un email à la liste de diffusion.
  * Logique idempotente : si l'email existe déjà mais est inactif, on le réactive.
+ * Retourne un objet avec un drapeau `estNouveau` pour distinguer les créations des réactivations.
  */
 export const sInscrire = async (email: string) => {
   const existant = await prisma.listeDiffusion.findUnique({ where: { email } });
 
   if (existant) {
     if (existant.actif) {
-      return existant;
+      return { abonne: existant, estNouveau: false };
     }
-    return await prisma.listeDiffusion.update({
+    const reactive = await prisma.listeDiffusion.update({
       where: { email },
       data: { actif: true }
     });
+    return { abonne: reactive, estNouveau: false };
   }
 
-  return await prisma.listeDiffusion.create({
+  const nouveau = await prisma.listeDiffusion.create({
     data: { email }
   });
+  return { abonne: nouveau, estNouveau: true };
 };
 
-/**
- * Désinscrire un email de la liste de diffusion (soft delete via le drapeau actif).
- */
+
 export const seDesinscrire = async (email: string) => {
   const existant = await prisma.listeDiffusion.findUnique({ where: { email } });
 
@@ -38,9 +39,7 @@ export const seDesinscrire = async (email: string) => {
   });
 };
 
-/**
- * Obtenir la liste de tous les abonnés actifs (Route Admin).
- */
+
 export const obtenirAbonnesActifs = async () => {
   return await prisma.listeDiffusion.findMany({
     where: { actif: true },
