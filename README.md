@@ -22,5 +22,3 @@ cd backend
 npm install
 npm run dev
 ```
-
-*Note : Les lignes directrices strictes régissant l'évolution de ce dépôt se trouvent dans `backend/internal-docs/rules.md`. Toute modification architecturale passera par un audit préalable.*
