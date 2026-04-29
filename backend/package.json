@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "npx dotenv -e .env.test -- npx prisma db push --accept-data-loss && npx dotenv -e .env.test -- jest",
+    "test": "npx dotenv -e .env.test -- npx prisma db push --accept-data-loss && npx dotenv -e .env.test -- jest --runInBand",
     "dev": "ts-node-dev --respawn --transpile-only src/serveur.ts",
     "build": "tsc",
     "start": "node dist/serveur.js"
