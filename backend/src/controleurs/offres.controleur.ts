@@ -9,7 +9,7 @@ export const creerOffre = async (req: Request, res: Response) => {
     const offre = await offresService.creerOffre(req.body);
     res.status(201).json({ message: 'Offre créée avec succès', offre });
   } catch (erreur: any) {
-    if (erreur.message.includes('pourcentage de remise') || erreur.message.includes('date de fin')) {
+    if (erreur.message.includes('date de fin')) {
       return res.status(400).json({ message: erreur.message });
     }
     res.status(500).json({ message: 'Erreur lors de la création de l\'offre', erreur: erreur.message });
@@ -52,7 +52,7 @@ export const modifierOffre = async (req: Request, res: Response) => {
     if (erreur.message === 'Offre non trouvée.') {
       return res.status(404).json({ message: erreur.message });
     }
-    if (erreur.message.includes('pourcentage de remise') || erreur.message.includes('date de fin')) {
+    if (erreur.message.includes('date de fin')) {
       return res.status(400).json({ message: erreur.message });
     }
     res.status(500).json({ message: 'Erreur lors de la modification de l\'offre', erreur: erreur.message });
