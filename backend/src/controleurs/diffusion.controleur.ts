@@ -1,9 +1,6 @@
 import { Request, Response } from 'express';
 import * as diffusionService from '../services/diffusion.service';
 
-/**
- * Inscrire un email à la newsletter (Public)
- */
 export const inscriptionNewsletter = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
@@ -12,16 +9,15 @@ export const inscriptionNewsletter = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Adresse email invalide.' });
     }
 
-    const abonne = await diffusionService.sInscrire(email.trim().toLowerCase());
-    res.status(201).json({ message: 'Inscription réussie', abonne });
+    const { abonne, estNouveau } = await diffusionService.sInscrire(email.trim().toLowerCase());
+    const codeStatut = estNouveau ? 201 : 200;
+    res.status(codeStatut).json({ message: 'Inscription réussie', abonne });
   } catch (erreur: any) {
     res.status(500).json({ message: 'Erreur lors de l\'inscription', erreur: erreur.message });
   }
 };
 
-/**
- * Désinscrire un email de la newsletter (Public)
- */
+
 export const desinscriptionNewsletter = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
@@ -40,9 +36,7 @@ export const desinscriptionNewsletter = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Lister les abonnés actifs (Admin)
- */
+
 export const listerAbonnes = async (req: Request, res: Response) => {
   try {
     const abonnes = await diffusionService.obtenirAbonnesActifs();

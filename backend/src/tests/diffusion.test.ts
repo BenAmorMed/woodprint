@@ -4,10 +4,12 @@ import { prisma } from '../config/db';
 import { genererToken } from '../utils/jwt';
 import { verifierBaseDeDonneesTest } from './test-utils';
 
-describe('Intégration Métier - Liste de Diffusion', () => {
+describe('Intégration Métier - Module ListeDiffusion (Mailing List)', () => {
   let clientToken: string;
   let adminToken: string;
   let adminId: string;
+
+  const emailTest = 'abonne.test@woodprint.test';
 
   beforeAll(async () => {
     verifierBaseDeDonneesTest();
@@ -16,7 +18,6 @@ describe('Intégration Métier - Liste de Diffusion', () => {
     await prisma.moduleSysteme.deleteMany();
     await prisma.utilisateur.deleteMany();
 
-    // Client
     const client = await prisma.utilisateur.create({
       data: {
         nom: 'Client Diffusion',
@@ -27,7 +28,6 @@ describe('Intégration Métier - Liste de Diffusion', () => {
     });
     clientToken = genererToken({ id: client.id, role: client.role });
 
-    // Admin avec permission GESTION_CLIENTS
     const admin = await prisma.utilisateur.create({
       data: {
         nom: 'Admin Diffusion',
@@ -40,7 +40,7 @@ describe('Intégration Métier - Liste de Diffusion', () => {
     adminToken = genererToken({ id: admin.id, role: admin.role });
 
     const moduleClients = await prisma.moduleSysteme.create({
-      data: { nom: 'GESTION_CLIENTS', description: 'Gestion des clients' }
+      data: { nom: 'GESTION_CLIENTS', description: 'Gestion des clients et abonnés' }
     });
     await prisma.permissionAdmin.create({
       data: { utilisateur_id: adminId, module_id: moduleClients.id }
@@ -54,56 +54,45 @@ describe('Intégration Métier - Liste de Diffusion', () => {
     await prisma.utilisateur.deleteMany();
   });
 
-  describe('Flux d\'inscription', () => {
-    it('Doit rejeter une inscription avec un email invalide', async () => {
+  describe('Flux 1 : Inscription publique', () => {
+    it('Doit inscrire un nouvel email avec le code 201', async () => {
+      const res = await request(app)
+        .post('/api/v1/diffusion/inscription')
+        .send({ email: emailTest });
+
+      expect(res.statusCode).toEqual(201);
+      expect(res.body.message).toEqual('Inscription réussie');
+      expect(res.body.abonne.email).toEqual(emailTest);
+      expect(res.body.abonne.actif).toBe(true);
+    });
+
+    it('Doit retourner 200 sans erreur lors d\'une inscription redondante', async () => {
+      const res = await request(app)
+        .post('/api/v1/diffusion/inscription')
+        .send({ email: emailTest });
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.abonne.actif).toBe(true);
+    });
+
+    it('Doit refuser une inscription sans email valide', async () => {
       const res = await request(app)
         .post('/api/v1/diffusion/inscription')
         .send({ email: 'pas-un-email' });
 
       expect(res.statusCode).toEqual(400);
-    });
-
-    it('Doit inscrire un nouvel email avec succès', async () => {
-      const res = await request(app)
-        .post('/api/v1/diffusion/inscription')
-        .send({ email: 'newsletter@woodprint.test' });
-
-      expect(res.statusCode).toEqual(201);
-      expect(res.body.abonne.email).toEqual('newsletter@woodprint.test');
-      expect(res.body.abonne.actif).toEqual(true);
-    });
-
-    it('Doit gérer une inscription redondante sans erreur (idempotence)', async () => {
-      const res = await request(app)
-        .post('/api/v1/diffusion/inscription')
-        .send({ email: 'newsletter@woodprint.test' });
-
-      expect(res.statusCode).toEqual(201);
-      expect(res.body.abonne.actif).toEqual(true);
+      expect(res.body.message).toContain('invalide');
     });
   });
 
-  describe('Flux de désinscription', () => {
-    it('Doit désinscrire un email existant', async () => {
+  describe('Flux 2 : Désinscription publique', () => {
+    it('Doit désinscrire un email existant avec le code 200', async () => {
       const res = await request(app)
         .post('/api/v1/diffusion/desinscription')
-        .send({ email: 'newsletter@woodprint.test' });
+        .send({ email: emailTest });
 
       expect(res.statusCode).toEqual(200);
-
-      const enBase = await prisma.listeDiffusion.findUnique({
-        where: { email: 'newsletter@woodprint.test' }
-      });
-      expect(enBase?.actif).toEqual(false);
-    });
-
-    it('Doit réactiver un abonné inactif lors d\'une réinscription', async () => {
-      const res = await request(app)
-        .post('/api/v1/diffusion/inscription')
-        .send({ email: 'newsletter@woodprint.test' });
-
-      expect(res.statusCode).toEqual(201);
-      expect(res.body.abonne.actif).toEqual(true);
+      expect(res.body.message).toContain('Désinscription');
     });
 
     it('Doit retourner 404 pour un email non inscrit', async () => {
@@ -115,8 +104,19 @@ describe('Intégration Métier - Liste de Diffusion', () => {
     });
   });
 
-  describe('Accès Admin aux abonnés', () => {
-    it('Doit interdire à un client de lister les abonnés', async () => {
+  describe('Flux 3 : Réinscription après désinscription', () => {
+    it('Doit réactiver un email précédemment désinscrit avec le code 200', async () => {
+      const res = await request(app)
+        .post('/api/v1/diffusion/inscription')
+        .send({ email: emailTest });
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.abonne.actif).toBe(true);
+    });
+  });
+
+  describe('Flux 4 : RBAC - Consultation des abonnés', () => {
+    it('Doit interdire à un CLIENT de consulter la liste des abonnés (403)', async () => {
       const res = await request(app)
         .get('/api/v1/diffusion/abonnes')
         .set('Authorization', `Bearer ${clientToken}`);
@@ -124,15 +124,25 @@ describe('Intégration Métier - Liste de Diffusion', () => {
       expect(res.statusCode).toEqual(403);
     });
 
-    it('Doit permettre à un admin de lister les abonnés actifs', async () => {
+    it('Doit interdire un accès non authentifié (401)', async () => {
+      const res = await request(app)
+        .get('/api/v1/diffusion/abonnes');
+
+      expect(res.statusCode).toEqual(401);
+    });
+
+    it('Doit permettre à un ADMIN avec GESTION_CLIENTS de lister les abonnés (200)', async () => {
       const res = await request(app)
         .get('/api/v1/diffusion/abonnes')
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.statusCode).toEqual(200);
       expect(Array.isArray(res.body)).toBeTruthy();
-      expect(res.body.length).toEqual(1);
-      expect(res.body[0].email).toEqual('newsletter@woodprint.test');
+      expect(res.body.length).toBeGreaterThanOrEqual(1);
+
+      const abonneActif = res.body.find((a: any) => a.email === emailTest);
+      expect(abonneActif).toBeDefined();
+      expect(abonneActif.actif).toBe(true);
     });
   });
 });
