@@ -48,7 +48,7 @@ export const soumettreAvis = async (req: RequeteAuthentifiee, res: Response) => 
  */
 export const listerAvisProduit = async (req: Request, res: Response) => {
   try {
-    const { produitId } = req.params;
+    const produitId = req.params.produitId as string;
     
     if (!produitId) {
       return res.status(400).json({ message: 'L\'ID du produit est requis.' });
@@ -66,7 +66,7 @@ export const listerAvisProduit = async (req: Request, res: Response) => {
  */
 export const repondreAvis = async (req: RequeteAuthentifiee, res: Response) => {
   try {
-    const { avisId } = req.params;
+    const avisId = req.params.avisId as string;
     const { reponse_admin } = req.body;
 
     if (!avisId || !reponse_admin) {

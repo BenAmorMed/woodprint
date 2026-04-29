@@ -5,8 +5,8 @@ import { rbacMiddleware } from '../middlewares/rbac.middleware';
 
 const router = Router();
 
-// Route publique : Consulter les avis d'un produit (montée de façon globale ou avec un paramètre explicit, mais ici on attend un produit_id dans le body ou via params selon le design. Dans le contrôleur, listerAvisProduit attend `req.params.produitId`)
-router.get('/produits/:produitId/avis', listerAvisProduit);
+// Route publique : Consulter les avis d'un produit
+router.get('/produits/:produitId', listerAvisProduit);
 
 // Route protégée : Soumettre un avis (doit être connecté)
 router.post('/', authMiddleware, soumettreAvis);
