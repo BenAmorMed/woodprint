@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, StatutCommande } from '@prisma/client';
 import { prisma } from '../config/db';
 import { CreerCommandeDTO } from '../types/commande.types';
 import { validerPersonnalisationsUtilisateur } from './validation.service';
@@ -132,5 +132,32 @@ export const obtenirCommandeParCode = async (code_confirmation: string, email_cl
         }
       }
     }
+  });
+};
+
+export const obtenirToutesLesCommandes = async () => {
+  return await prisma.commande.findMany({
+    include: {
+      lignes: {
+        include: {
+          variante_produit: {
+            include: {
+              produit: true
+            }
+          }
+        }
+      },
+      utilisateur: {
+        select: { nom: true, email: true }
+      }
+    },
+    orderBy: { date_creation: 'desc' }
+  });
+};
+
+export const mettreAJourStatutCommande = async (commande_id: string, statut: StatutCommande) => {
+  return await prisma.commande.update({
+    where: { id: commande_id },
+    data: { statut }
   });
 };

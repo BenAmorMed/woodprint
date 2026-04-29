@@ -1,10 +1,13 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { RequeteAuthentifiee } from '../middlewares/auth.middleware';
 import { CreerCommandeDTO } from '../types/commande.types';
+import { StatutCommande } from '@prisma/client';
 import { 
   creerCommande, 
   obtenirCommandesUtilisateur, 
   obtenirCommandeParCode,
+  obtenirToutesLesCommandes,
+  mettreAJourStatutCommande,
   ErreurValidationCommande
 } from '../services/commandes.service';
 
@@ -64,5 +67,30 @@ export const suivreCommandeInvite = async (req: RequeteAuthentifiee, res: Respon
   } catch (error) {
     console.error('Erreur lors du suivi de commande:', error);
     res.status(500).json({ message: 'Erreur interne du serveur.' });
+  }
+};
+
+export const listerToutesLesCommandes = async (req: Request, res: Response) => {
+  try {
+    const commandes = await obtenirToutesLesCommandes();
+    res.status(200).json(commandes);
+  } catch (erreur) {
+    res.status(500).json({ message: 'Erreur lors de la récupération des commandes.' });
+  }
+};
+
+export const mettreAJourStatut = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { statut } = req.body;
+
+    if (!statut || !Object.values(StatutCommande).includes(statut as StatutCommande)) {
+      return res.status(400).json({ message: 'Statut invalide.' });
+    }
+
+    const commande = await mettreAJourStatutCommande(id, statut as StatutCommande);
+    res.status(200).json(commande);
+  } catch (erreur) {
+    res.status(500).json({ message: 'Erreur lors de la mise à jour du statut.' });
   }
 };
