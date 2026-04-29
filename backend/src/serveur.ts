@@ -10,6 +10,7 @@ import commandesRoutes from './routes/commandes.routes';
 import avisRoutes from './routes/avis.routes';
 import parametresRoutes from './routes/parametres.routes';
 import offresRoutes from './routes/offres.routes';
+import diffusionRoutes from './routes/diffusion.routes';
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use('/api/v1/commandes', commandesRoutes);
 app.use('/api/v1/avis', avisRoutes);
 app.use('/api/v1/parametres', parametresRoutes);
 app.use('/api/v1/offres', offresRoutes);
+app.use('/api/v1/diffusion', diffusionRoutes);
 
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'API WoodPrint v1 opérationnelle.' });
