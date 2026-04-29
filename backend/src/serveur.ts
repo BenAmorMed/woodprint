@@ -6,6 +6,7 @@ import categoriesRoutes from './routes/categories.routes';
 import produitsRoutes from './routes/produits.routes';
 import variantesRoutes from './routes/variantes.routes';
 import mediasRoutes from './routes/medias.routes';
+import commandesRoutes from './routes/commandes.routes';
 
 dotenv.config();
 
@@ -19,6 +20,8 @@ app.use('/api/v1/categories', categoriesRoutes);
 app.use('/api/v1/produits', produitsRoutes);
 app.use('/api/v1/produits/:produit_id/variantes', variantesRoutes);
 app.use('/api/v1/medias', mediasRoutes);
+app.use('/api/v1/commandes', commandesRoutes);
+
 app.get('/api/v1/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'API WoodPrint v1 opérationnelle.' });
 });

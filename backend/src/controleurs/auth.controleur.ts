@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { RequeteAuthentifiee } from '../middlewares/auth.middleware';
 import { prisma } from '../config/db';
 import { hacherMotDePasse, verifierMotDePasse } from '../utils/cryptage';
 import { genererToken } from '../utils/jwt';
@@ -73,9 +74,60 @@ export const demandeReinitialisationPwd = async (req: Request, res: Response) =>
       await emailReinitialisationPwd(email, jetonBrut);
     }
 
-    // Toujours retourner 200 pour éviter l'énumération des emails
     res.status(200).json({ message: 'Si l’email existe, un lien a été envoyé.' });
   } catch (erreur) {
     res.status(500).json({ message: 'Erreur lors de la demande.' });
+  }
+};
+
+export const obtenirProfil = async (req: RequeteAuthentifiee, res: Response) => {
+  try {
+    const id = req.utilisateur?.id;
+    const utilisateur = await prisma.utilisateur.findUnique({
+      where: { id },
+      select: { id: true, nom: true, email: true, role: true, date_creation: true }
+    });
+
+    if (!utilisateur) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé.' });
+    }
+
+    res.status(200).json(utilisateur);
+  } catch (erreur) {
+    res.status(500).json({ message: 'Erreur lors de la récupération du profil.' });
+  }
+};
+
+export const reinitialiserMotDePasse = async (req: Request, res: Response) => {
+  try {
+    const { email, jeton, nouveauMotDePasse } = req.body;
+
+    if (!email || !jeton || !nouveauMotDePasse) {
+      return res.status(400).json({ message: 'Email, jeton et nouveau mot de passe requis.' });
+    }
+
+    const utilisateur = await prisma.utilisateur.findUnique({ where: { email } });
+
+    if (!utilisateur || !utilisateur.jeton_reinitialisation) {
+      return res.status(400).json({ message: 'Jeton invalide ou expiré.' });
+    }
+
+    const valide = await verifierMotDePasse(jeton, utilisateur.jeton_reinitialisation);
+    if (!valide) {
+      return res.status(400).json({ message: 'Jeton invalide ou expiré.' });
+    }
+
+    const motDePasseHache = await hacherMotDePasse(nouveauMotDePasse);
+    await prisma.utilisateur.update({
+      where: { id: utilisateur.id },
+      data: {
+        mot_de_passe: motDePasseHache,
+        jeton_reinitialisation: null
+      }
+    });
+
+    res.status(200).json({ message: 'Mot de passe réinitialisé avec succès.' });
+  } catch (erreur) {
+    res.status(500).json({ message: 'Erreur lors de la réinitialisation.' });
   }
 };

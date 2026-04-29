@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { inscription, connexion, demandeReinitialisationPwd } from '../controleurs/auth.controleur';
+import { inscription, connexion, demandeReinitialisationPwd, reinitialiserMotDePasse, obtenirProfil } from '../controleurs/auth.controleur';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { resetMotDePasseAdmin, accorderPermission } from '../controleurs/admin.controleur';
 import { rbacMiddleware } from '../middlewares/rbac.middleware';
@@ -10,6 +10,10 @@ const routeur = Router();
 routeur.post('/inscription', inscription);
 routeur.post('/connexion', connexion);
 routeur.post('/reinitialisation-pwd', demandeReinitialisationPwd);
+routeur.post('/reinitialiser-pwd', reinitialiserMotDePasse);
+
+// Routes protégées CLIENT/ADMIN
+routeur.get('/profil', authMiddleware, obtenirProfil);
 
 // Routes protégées SUPER_ADMIN
 routeur.post('/admin/reset-pwd', authMiddleware, resetMotDePasseAdmin);
