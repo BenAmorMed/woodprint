@@ -1,26 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../config/db';
-import { SchemaPersonnalisation } from '../types/produit.types';
-
-const validerSchemaPersonnalisation = (schema: any): boolean => {
-  if (!Array.isArray(schema)) return false;
-  
-  const typesAutorises = ['texte', 'image', 'coordonnees', 'select', 'nombre'];
-  
-  for (const champ of schema) {
-    if (!champ.id || typeof champ.id !== 'string') return false;
-    if (!champ.nom || typeof champ.nom !== 'string') return false;
-    if (!typesAutorises.includes(champ.type)) return false;
-    if (typeof champ.requis !== 'boolean') return false;
-    
-    if (champ.type === 'select') {
-      if (!Array.isArray(champ.options) || !champ.options.every((opt: any) => typeof opt === 'string')) {
-        return false;
-      }
-    }
-  }
-  return true;
-};
+import { validerSchemaPersonnalisation } from '../services/validation.service';
 
 export const creerProduit = async (req: Request, res: Response) => {
   try {
