@@ -25,6 +25,16 @@ export const inscription = async (req: Request, res: Response) => {
       }
     });
 
+    await prisma.commande.updateMany({
+      where: {
+        email_client: email,
+        utilisateur_id: null
+      },
+      data: {
+        utilisateur_id: utilisateur.id
+      }
+    });
+
     const token = genererToken({ id: utilisateur.id, role: utilisateur.role });
     res.status(201).json({ jeton: token, utilisateur: { id: utilisateur.id, nom, email, role: utilisateur.role } });
   } catch (erreur) {

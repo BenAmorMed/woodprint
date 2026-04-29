@@ -98,4 +98,38 @@ describe('Intégration Métier - Authentification & Profil', () => {
       expect(res.statusCode).toEqual(400);
     });
   });
+
+  describe('Réconciliation des Commandes Invitées', () => {
+    it('Doit lier les anciennes commandes invitées au nouveau compte lors de l\'inscription', async () => {
+      const emailInvite = 'reconciliation@woodprint.test';
+      const commandeInvite = await prisma.commande.create({
+        data: {
+          email_client: emailInvite,
+          nom_client: 'Client Invité',
+          montant_total: 100.0,
+          adresse_livraison: { ville: 'Paris', adresse: '1 Rue de Rivoli' },
+          utilisateur_id: null
+        }
+      });
+
+      expect(commandeInvite.utilisateur_id).toBeNull();
+
+      const res = await request(app)
+        .post('/api/v1/auth/inscription')
+        .send({
+          nom: 'Client Réconcilié',
+          email: emailInvite,
+          mot_de_passe: 'mot_de_passe_robuste'
+        });
+
+      expect(res.statusCode).toEqual(201);
+      const nouvelUtilisateurId = res.body.utilisateur.id;
+
+      const commandeMiseAJour = await prisma.commande.findUnique({
+        where: { id: commandeInvite.id }
+      });
+
+      expect(commandeMiseAJour?.utilisateur_id).toEqual(nouvelUtilisateurId);
+    });
+  });
 });
